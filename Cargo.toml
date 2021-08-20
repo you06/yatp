@@ -44,6 +44,10 @@ harness = false
 name = "ping_pong"
 harness = false
 
+[[bench]]
+name = "wait_switch"
+harness = false
+
 [profile.bench]
 codegen-units = 1
 debug = true

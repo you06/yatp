@@ -43,7 +43,9 @@ where
 
 /// The local queue of a single level work stealing task queue.
 pub struct LocalQueue<T> {
+    poll_process: bool,
     local_queue: Worker<T>,
+    process_queue: Worker<T>,
     injector: Arc<Injector<T>>,
     stealers: Vec<Stealer<T>>,
 }
@@ -54,7 +56,7 @@ where
 {
     pub fn push(&mut self, mut task_cell: T) {
         set_schedule_time(&mut task_cell);
-        self.local_queue.push(task_cell);
+        self.process_queue.push(task_cell);
     }
 
     pub fn pop(&mut self) -> Option<Pop<T>> {
@@ -70,6 +72,13 @@ where
             }
         }
 
+        if self.poll_process {
+            self.poll_process = false;
+            if let Some(t) = self.process_queue.pop() {
+                return Some(into_pop(t, true));
+            }
+        }
+        self.poll_process = true;
         if let Some(t) = self.local_queue.pop() {
             return Some(into_pop(t, true));
         }
@@ -137,7 +146,9 @@ pub fn create<T>(local_num: usize) -> (TaskInjector<T>, Vec<LocalQueue<T>>) {
             // Steal with a random start to avoid imbalance.
             stealers.shuffle(&mut thread_rng());
             LocalQueue {
+                poll_process: true,
                 local_queue,
+                process_queue: Worker::new_fifo(),
                 injector: injector.clone(),
                 stealers,
             }

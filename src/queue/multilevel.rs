@@ -82,7 +82,9 @@ where
 
 /// The local queue of a multilevel task queue.
 pub(crate) struct LocalQueue<T> {
+    poll_process: bool,
     local_queue: Worker<T>,
+    process_queue: Worker<T>,
     level_injectors: Arc<[Injector<T>; LEVEL_NUM]>,
     stealers: Vec<Stealer<T>>,
     manager: Arc<LevelManager>,
@@ -94,7 +96,7 @@ where
 {
     pub(super) fn push(&mut self, mut task_cell: T) {
         self.manager.prepare_before_push(&mut task_cell);
-        self.local_queue.push(task_cell);
+        self.process_queue.push(task_cell);
     }
 
     pub(super) fn pop(&mut self) -> Option<Pop<T>> {
@@ -110,6 +112,13 @@ where
             }
         }
 
+        if self.poll_process {
+            self.poll_process = false;
+            if let Some(t) = self.process_queue.pop() {
+                return Some(into_pop(t, true));
+            }
+        }
+        self.poll_process = true;
         if let Some(t) = self.local_queue.pop() {
             return Some(into_pop(t, true));
         }
@@ -584,7 +593,9 @@ impl Builder {
                 // Steal with a random start to avoid imbalance.
                 stealers.shuffle(&mut thread_rng());
                 LocalQueue {
+                    poll_process: true,
                     local_queue,
+                    process_queue: Worker::new_fifo(),
                     level_injectors: level_injectors.clone(),
                     stealers,
                     manager: self.manager.clone(),

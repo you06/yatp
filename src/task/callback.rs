@@ -91,7 +91,7 @@ impl<'a> Handle<'a> {
 /// Callback task runner.
 ///
 /// It's possible that a task can't be finished in a single execution and needs
-/// to be rerun. `max_inspace_spin` is the maximum times a task is rerun at once
+/// to be rerun. `max_inplace_spin` is the maximum times a task is rerun at once
 /// before being put back to the thread pool.
 pub struct Runner {
     max_inplace_spin: usize,
