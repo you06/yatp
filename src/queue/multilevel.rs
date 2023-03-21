@@ -273,7 +273,6 @@ where
         self.inner.start(local)
     }
 
-    #[inline]
     fn handle(&mut self, local: &mut Local<T>, mut task_cell: T) -> bool {
         let extras = task_cell.mut_extras();
         let total_running_time = extras.total_running_time.clone();
