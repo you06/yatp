@@ -245,6 +245,7 @@ pub struct TrackedRunner<R> {
 }
 
 impl<R> TrackedRunner<R> {
+    #[inline]
     pub(super) fn flush(&mut self) {
         self.local_level0_elapsed_us.flush();
         self.local_total_elapsed_us.flush();
@@ -273,6 +274,7 @@ where
         self.inner.start(local)
     }
 
+    #[inline]
     fn handle(&mut self, local: &mut Local<T>, mut task_cell: T) -> bool {
         let extras = task_cell.mut_extras();
         let total_running_time = extras.total_running_time.clone();
